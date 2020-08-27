@@ -1,0 +1,28 @@
+<table width="640" cellpadding="0" cellspacing="0" border="0" class="wrapper" bgcolor="#FFFFFF">
+    <tr>
+        <td align="left" valign="top" width="320">
+            <h3 class="section-title">
+                Artigos
+            </h3>
+            <div width="320" height="5" style="background-color: #195C3C; height: 5px;">&nbsp;</div>
+        </td>
+        <td>
+            &nbsp;
+        </td>
+    </tr>
+    <tr>
+        <td height="28">&nbsp;</td>
+    </tr>
+    <!-- prettier-ignore -->
+    <% articles.forEach((article) => { %>
+        <%- include('./article-blog', article); %>
+    <% }); %>
+    <tr>
+        <td>
+            <a class="article-button" href="https://medium.com/android-dev-br" target="_blank">Ver mais artigos</a>
+        </td>
+    </tr>
+    <tr>
+        <td height="28">&nbsp;</td>
+    </tr>
+</table>

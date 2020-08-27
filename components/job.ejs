@@ -1,0 +1,53 @@
+<tr>
+    <td colspan="2">
+        <table cellpadding="0" cellspacing="0" border="0" class="container">
+            <tr></tr>
+            <tr align="center">
+                <% if (job[0]) { %>
+                <td align="left" style="margin: 0 0 0 11px;" width="320" valign="center">
+                    <p class="section-date">
+                        <% if (job[0].title.toLowerCase().includes('remoto') || job[0].title.toLowerCase().includes('remote')) { %>
+                        Remoto
+                        <% } else { %>
+                        Presencial
+                        <% } %>
+                    </p>
+                    <h3 class="section-headline">
+                        <a href="<%= job[0].url %>" class="section-headline" target="_blank" rel="noopener noreferrer" mc:edit>
+                            <%= job[0].title %>
+                        </a>
+                    </h3>
+                    <p class="section-text">
+                        <%= job[0].description %>
+                    </p>
+                </td>
+                <% } %>
+                <td width="10">
+                    &nbsp;
+                </td>
+                <% if (job[1]) { %>
+                    <td align="left" style="margin: 0 0 0 11px;" width="320" valign="center">
+                        <p class="section-date">
+                            <% if (job[1].title.toLowerCase().includes('remoto') || job[1].title.toLowerCase().includes('remote')) { %>
+                            Remoto
+                            <% } else { %>
+                            Presencial
+                            <% } %>
+                        </p>
+                        <h3 class="section-headline">
+                            <a href="<%= job[1].url %>" class="section-headline" target="_blank" rel="noopener noreferrer" mc:edit>
+                                <%= job[1].title %>
+                            </a>
+                        </h3>
+                        <p class="section-text">
+                            <%= job[1].description %>
+                        </p>
+                    </td>
+                    <% } %>
+            </tr>
+            <tr>
+                <td height="28">&nbsp;</td>
+            </tr>
+        </table>
+    </td>
+</tr>

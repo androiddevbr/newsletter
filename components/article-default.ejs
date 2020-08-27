@@ -1,0 +1,29 @@
+<tr colspan="2">
+    <td colspan="2">
+        <table cellpadding="0" cellspacing="0" border="0" class="container">
+            <tr align="center">
+                <td align="left" style="margin: 0 0 0 11px;" valign="center">
+                    <p class="section-date">
+                        <%= moment(date).format('LL') %>
+                    </p>
+                    <h3 class="section-headline">
+                        <a href="<%= url %>" class="section-headline" target="_blank" rel="noopener noreferrer" mc:edit>
+                            <%= title %>
+                        </a>
+                    </h3>
+                    <p class="section-text">
+                        <%= text %>
+                    </p>
+                </td>
+                <td width="11">&nbsp;</td>
+                <td align="right" width="80">
+                    <!-- <div class="featured-img" style="background-image: url('<%= image %>');">&nbsp;</div> -->
+                    <img class="section-img" src="<%= image %>" />
+                </td>
+            </tr>
+            <tr>
+                <td height="28">&nbsp;</td>
+            </tr>
+        </table>
+    </td>
+</tr>
