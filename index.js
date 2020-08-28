@@ -62,6 +62,17 @@ const data = [
 
 const articles = [
     {
+        title: 'Continuous Delivery com Fastlane e Android',
+        date: new Date(2020, 04, 22),
+        text: 'Uma introdução sobre como a Fastlane pode ser útil em projetos Android',
+        image: 'https://miro.medium.com/max/4800/1*clK6pn73fpNukIoVSHUiWQ.jpeg',
+        url: 'https://medium.com/android-dev-br/continuous-delivery-com-fastlane-e-android-6ccc8f12a336',
+        author: {
+            name: 'Wil Filho',
+            image: 'https://miro.medium.com/fit/c/96/96/1*MMVOqBiLe6uTyOEoyxffkg.jpeg'
+        }
+    },
+    {
         title: 'Hilt Series: Architecture Components com Dagger Hilt — ViewModel',
         date: new Date(2020, 07, 04),
         text: 'Aprenda como injetar o ViewModel utilizando o Dagger Hilt no seu projeto',
