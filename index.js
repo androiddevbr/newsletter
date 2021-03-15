@@ -1,170 +1,177 @@
-const minify = require("html-minifier").minify
-const fs = require("fs")
+const minify = require("html-minifier").minify;
+const fs = require("fs");
 const path = require("path");
 const ejs = require("ejs");
-const inlineCss = require("inline-css")
-var moment = require('moment')
+const inlineCss = require("inline-css");
+var moment = require("moment");
+const fetch = require("node-fetch");
+const { htmlToText } = require("html-to-text");
+const { markdownToTxt } = require("markdown-to-txt");
 
-moment.locale('pt-br')
+const urlMetadata = require("url-metadata");
+const getUrls = require("get-urls");
 
-const data = [
-    {
-        section: 'Destaques',
-        articles: [
-            {
-                title: 'Hacktoberfest Android Dev BR',
-                date: new Date(2020, 10, 01),
-                text: 'Vamos celebrar o open source e fazer parte desse movimento global com um foco em projetos android.',
-                image: 'https://hacktoberfest.digitalocean.com/assets/HF-full-logo-b05d5eb32b3f3ecc9b2240526104cf4da3187b8b61963dd9042fdc2536e4a76c.svg',
-                url: 'https://organize.mlh.io/participants/events/4249-hacktoberfest-android-dev-br',
-                featured: true
-            },
-            {
-                title: 'Latin Android Summit',
-                date: new Date(2020, 10, 22),
-                text: 'Evento internacional voltado para pessoas que falam alguma língua latina. Terão palestras em Português, Espanhol e Inglês.',
-                image: 'https://res.cloudinary.com/ideation/image/upload/w_470,q_auto,f_auto,dpr_auto/qxvpabgk4pxsf5mnq6wx',
-                url: 'https://latinandroidsummit-welcome.virtualconference.com/',
-                featured: true
-            }
-        ]
-    },
-    {
-        section: 'Notícias',
-        articles: [
-            {
-                title: 'Impacto econômico e social do Android no Brasil',
-                date: new Date(2020, 09, 23),
-                text: 'Este site apresenta os principais resultados de um estudo realizado pela Bain & Company sobre impactos econômicos e sociais do Android no Brasil.',
-                image: 'https://baininsights.com.br/wp-content/uploads/2020/09/home-destaque-smartphone.jpg',
-                url: 'https://baininsights.com.br/',
-                featured: false
-            },
-            {
-                title: 'Turning it up to 11: Android 11 for developers',
-                date: new Date(2020, 09, 07),
-                text: 'Android 11 is here! Today we’re pushing the source to the Android Open Source Project (AOSP) and officially releasing the newest version of Android. We built Android 11 with a focus on three themes: a People-centric approach to communication, Controls to let users quickly get to and control all of their smart devices, and Privacy to give users more ways to control how data on devices is shared. Read more in our Keyword post.',
-                image: 'https://1.bp.blogspot.com/-nNMn8M5HB90/X1VDbnTopaI/AAAAAAAAPmU/pXIMwzpsCh4I_6FqWelywA4ErpsjJOQbwCLcBGAsYHQ/s1600/image17.png',
-                url: 'https://android-developers.googleblog.com/2020/09/android11-final-release.html',
-                featured: false
-            },
-            {
-                title: 'Kotlin Multiplatform Mobile Goes Alpha',
-                date: new Date(2020, 08, 31),
-                text: 'Kotlin Multiplatform Mobile (KMM) is an SDK that allows you to use the same business logic code in both iOS and Android applications.',
-                image: 'https://blog.jetbrains.com/wp-content/uploads/2020/08/KMM_release_banners_blogpost.png',
-                url: 'https://blog.jetbrains.com/kotlin/2020/08/kotlin-multiplatform-mobile-goes-alpha/',
-                featured: false
-            }
-        ]
-    }
-]
+const { Octokit } = require("@octokit/rest");
 
-const articles = [
-    {
-        title: 'Como implementar InAppReview',
-        date: new Date(2020, 09, 11),
-        text: 'Em algum momento você já implementou ou vai precisar implementar uma forma de pedir para os seus usuários deixarem um review sobre o seu app na PlayStore.',
-        image: 'https://miro.medium.com/max/3000/1*R6rNjXZKU1pXMiX8iiXfOw.png',
-        url: 'https://medium.com/android-dev-br/como-implementar-inappreview-83ae04e1f5c8',
-        author: {
-            name: 'Iago Mendes Fucolo',
-            image: 'https://miro.medium.com/fit/c/96/96/1*q4DrYIBsatHvx-9A9xi7Yg.jpeg'
+const creds = require("./service-account.json"); // the file saved above
+const { GoogleSpreadsheet } = require("google-spreadsheet");
+
+moment.locale("pt-br");
+
+const doc = new GoogleSpreadsheet(
+  "12iUrJRBE79WwmZh0DUAGK2D4-NjAlkU-JVszLXKpOtg"
+);
+
+(async function () {
+  await doc.useServiceAccountAuth(creds);
+})();
+
+const octokit = new Octokit({
+  auth: "f551ff5acc676e3c51a09428836c5201d2ab3554",
+});
+
+const loadNews = async () => {
+  await doc.loadInfo(); // loads document properties and worksheets
+  const newsSheet = doc.sheetsByTitle["News"];
+  const rows = await (await newsSheet.getRows()).filter((row) => {
+    const date = new Date(row["DATE"]);
+    return date.getMonth() == new Date().getMonth();
+  });
+  const urls = [];
+  rows.forEach((row) => {
+    urls.push(...Array.from(getUrls(row["BODY"])));
+  });
+  const metadata = await Promise.all(
+    urls.map(async (url) => {
+      try {
+        return await urlMetadata(url);
+      } catch (error) {
+        console.error(url, error);
+      }
+    })
+  );
+  return metadata.reverse().map((data) =>
+    data
+      ? {
+          title: data.title,
+          date: new Date(data["datePublished"]),
+          text: data.description,
+          url: data.url,
+          image: data.image,
         }
-    },
-    {
-        title: 'Flow e ViewPager',
-        date: new Date(2020, 07, 04),
-        text: 'Pessoal, hoje vamos ver um pouco como o Flow pode nos ajudar a fazer de uma forma elegante e bem mais organizada um carrossel.',
-        image: 'https://miro.medium.com/max/1400/1*SP-5OrAglsCyWLZbl4DXiA.png',
-        url: 'https://medium.com/android-dev-br/flow-e-viewpager-863b6c30efc8',
-        author: {
-            name: 'João Victor',
-            image: 'https://miro.medium.com/fit/c/96/96/0*GF_o2IKLvZo7AV9l.jpg'
-        }
-    },
-]
+      : undefined
+  );
+};
 
-const jobs = [
-    [
-        {
-            title: '[são paulo] Android Developer - 5A Attiva',
-            description: 'Buscamos um Desenvolvedor apaixonado por tecnologias e novos conceitos. Que goste de trabalhar em modelo Squad e método ágil.',
-            url: 'https://github.com/androiddevbr/vagas/issues/1235'
-        },
-        {
-            title: 'Analista Programador(a) Android Senior',
-            description: 'Estamos em busca de uma pessoa com experiência em programação/ desenvolvimento mobile Android, com experiência em Kotlin, tecnologia RESTful, Back-end, web developer, e adaptação de layout entre diferentes dispositivos para atuar no desenvolvimento da plataforma Sofie.',
-            url: 'https://github.com/androiddevbr/vagas/issues/1233'
+const loadArticles = async () => {
+  const data = await fetch(
+    "https://api.rss2json.com/v1/api.json?rss_url=https%3A%2F%2Fmedium.com%2Ffeed%2Fandroid-dev-br"
+  ).then((res) => res.json());
+  const res = data.items;
+  const posts = res.filter(
+    (item) => new Date(item.pubDate).getMonth() == new Date().getMonth()
+  );
+  return posts.map((post) =>
+    post
+      ? {
+          title: post.title,
+          date: new Date(post.pubDate),
+          text:
+            htmlToText(post.content, {
+              wordwrap: 130,
+              tags: {
+                img: { format: "skip" },
+                a: { options: { ignoreHref: true } },
+                p: { options: { leadingLineBreaks: 1, trailingLineBreaks: 1 } },
+                pre: {
+                  options: { leadingLineBreaks: 1, trailingLineBreaks: 1 },
+                },
+                h1: { options: { uppercase: false } },
+                h2: { options: { uppercase: false } },
+                h3: { options: { uppercase: false } },
+                h4: { options: { uppercase: false } },
+                h5: { options: { uppercase: false } },
+              },
+            }).replaceAll(/\r?\n|\r/g, ". ") || "",
+          image: post.thumbnail,
+          url: post.link,
+          author: {
+            name: post.author,
+          },
         }
-    ],
-    [
-        {
-            title: '(PRESENCIAL ou REMOTO) Desenvolvedor Mobile (Porto Alegre)',
-            description: 'Requisitos / Seu dia a dia: Estar disposto a atuar em um cenário de transformação digital; Ter noções de Governança; Possuir sólidos conhecimentos e vivência com práticas de agilidade (Scrum, Kanban, Lean...) Vivência com desenvolvimento, planejamento, arquitetura, realização e configuração de testes.',
-            url: 'https://github.com/androiddevbr/vagas/issues/1228'
-        },
-        {
-            title: 'Desenvolvedor Android para o Rio de Janeiro',
-            description: 'Desejáveis: Conhecimento em Desenvolvimento com Android, Desenvolvimento de Aplicações para integração de dados com outros aplicativos Node. Escrever código limpo, de fácil manutenção, utilizando as melhores práticas de desenvolvimento de software;',
-            url: 'https://github.com/androiddevbr/vagas/issues/1226'
-        }
-    ],
-    [
-        {
-            title: 'DESENVOLVEDOR(A) ANDROID - ZUP INNOVATION',
-            description: 'Sabe aquele app que você ama cada interação? Que tal participar da construção e melhorias das experiências para dispositivos Android - e contribuir para a transformação digital no país? Confere se você tem o que é preciso para fazer parte desse time de elite.',
-            url: 'https://github.com/androiddevbr/vagas/issues/1225'
-        },
-        {
-            title: '[MARINGÁ/REMOTO] Senior Android Developer na DB1',
-            description: 'No DB1 Group, o (a) desenvolvedor(a) Android terá a oportunidade de trabalhar com práticas de desenvolvimento ágil, pair programming, integração contínua, desenvolvimento orientado a testes (TDD) e boas práticas de Clean Code.',
-            url: 'https://github.com/androiddevbr/vagas/issues/1224'
-        }
-    ]
-]
+      : undefined
+  );
+};
 
-    ; (async () => {
-        try {
-            ejs.renderFile(
-                path.resolve(
-                    __dirname,
-                    `newsletter.ejs`
-                ),
-                { moment, data, articles, jobs },
-                {},
-                (e, html) => {
-                    if (e) console.error(e)
+const loadJobs = async () => {
+  const date = new Date();
+  const firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
+  const issues = await octokit.issues.listForRepo({
+    repo: "vagas",
+    owner: "androiddevbr",
+    state: "open",
+    sort: "created",
+    direction: "desc",
+    since: firstDay.toISOString(),
+  });
+  return issues.data
+    .map((issue) => ({
+      title: issue.title,
+      description: markdownToTxt(issue.body),
+      url: issue.html_url,
+    }))
+    .reduce((result, value, index, array) => {
+      if (index % 2 === 0) result.push(array.slice(index, index + 2));
+      return result;
+    }, []);
+};
 
-                    fs.mkdir(
-                        path.resolve(__dirname, "output"),
-                        { recursive: true },
-                        async (e) => {
-                            if (e) console.error(e)
+(async () => {
+  try {
+    const jobs = await loadJobs();
+    const articles = Array.from(await loadArticles()).filter(Boolean);
+    const data = [
+      {
+        section: "🗞️ Novidades",
+        articles: Array.from(await loadNews()).filter(Boolean),
+      },
+    ];
+    ejs.renderFile(
+      path.resolve(__dirname, `newsletter.ejs`),
+      { moment, data, articles, jobs },
+      {},
+      (e, html) => {
+        if (e) console.error(e);
 
-                            fs.writeFileSync(
-                                path.resolve(__dirname, `output/newsletter.html`),
-                                minify(
-                                    await inlineCss(html, {
-                                        url: 'androiddevbr.org',
-                                        removeLinkTags: false,
-                                        applyTableAttributes: true,
-                                        preserveMediaQueries: true,
-                                    }),
-                                    {
-                                        minifyCSS: true,
-                                        removeEmptyElements: true,
-                                        removeEmptyAttributes: true,
-                                        collapseWhitespace: true,
-                                        removeComments: true,
-                                    }
-                                )
-                            )
-                        }
-                    )
+        fs.mkdir(
+          path.resolve(__dirname, "output"),
+          { recursive: true },
+          async (e) => {
+            if (e) console.error(e);
+
+            fs.writeFileSync(
+              path.resolve(__dirname, `output/newsletter.html`),
+              minify(
+                await inlineCss(html, {
+                  url: "androiddevbr.org",
+                  removeLinkTags: false,
+                  applyTableAttributes: true,
+                  preserveMediaQueries: true,
+                }),
+                {
+                  minifyCSS: true,
+                  removeEmptyElements: true,
+                  removeEmptyAttributes: true,
+                  collapseWhitespace: true,
+                  removeComments: true,
                 }
-            )
-        } catch (e) {
-            console.error(e)
-        }
-    })()
+              )
+            );
+          }
+        );
+      }
+    );
+  } catch (e) {
+    console.error(e);
+  }
+})();

@@ -19,7 +19,9 @@
                     <% data.forEach((section) => { %>
                         <%- include('components/section', section); %>
                     <% }); %>
-                    <%- include('components/article-section', { articles }); %>
+                    <%if (articles.length > 0) { %>
+                        <%- include('components/article-section', { articles }); %>
+                    <% } %>
                     <tr>
                         <td height="28">&nbsp;</td>
                     </tr>
